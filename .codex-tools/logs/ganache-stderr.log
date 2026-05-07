@@ -1,0 +1,11 @@
+This version of µWS is not compatible with your Node.js build:
+
+Error: Cannot find module '../binaries/uws_win32_x64_137.node'
+Require stack:
+- C:\Users\USERAS\Desktop\cse446\CSE446-project\truffle-project\node_modules\ganache\node_modules\@trufflesuite\uws-js-unofficial\src\uws.js
+- C:\Users\USERAS\Desktop\cse446\CSE446-project\truffle-project\node_modules\ganache\dist\node\cli.js
+Falling back to a NodeJS implementation; performance may be degraded.
+
+
+(node:17980) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 close listeners added to [Server]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)

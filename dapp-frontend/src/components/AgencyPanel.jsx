@@ -9,11 +9,18 @@ const AgencyPanel = () => {
 
   useEffect(() => {
     fetchMyMissions();
-    if(contract) {
-       contract.on("MissionFunded", fetchMyMissions);
-       contract.on("DeliveredMarked", fetchMyMissions);
-       contract.on("FundsReleased", fetchMyMissions);
+    if (contract) {
+      contract.on("MissionFunded", fetchMyMissions);
+      contract.on("DeliveredMarked", fetchMyMissions);
+      contract.on("FundsReleased", fetchMyMissions);
     }
+    return () => {
+      if (contract) {
+        contract.removeAllListeners("MissionFunded");
+        contract.removeAllListeners("DeliveredMarked");
+        contract.removeAllListeners("FundsReleased");
+      }
+    };
   }, [contract, account]);
 
   const fetchMyMissions = async () => {

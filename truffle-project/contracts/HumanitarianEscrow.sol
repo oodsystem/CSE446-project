@@ -134,6 +134,7 @@ contract HumanitarianEscrow {
         require(m.status == Status.Delivered, "Mission not marked delivered");
 
         _processPayment(m);
+        m.status = Status.Resolved;
     }
 
     // 6. Dispute & Resolution

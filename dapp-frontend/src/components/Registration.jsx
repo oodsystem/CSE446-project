@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 
 const Registration = () => {
-  const { account, contract, fetchUserProfile, loading, customAddress, updateContractAddress } = useWeb3();
+  const { account, contract, fetchUserProfile, loading, customAddress, updateContractAddress, networkError } = useWeb3();
   const [name, setName] = useState('');
   const [role, setRole] = useState(2); // Default to Donor (Role.Donor = 2 in Solidity ENUM: None=0, UN_Arbiter=1, Donor=2, Relief_Agency=3)
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -11,6 +11,7 @@ const Registration = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return alert("Name is required");
+    if (!contract) return alert("Contract is not ready. Check your MetaMask network.");
 
     try {
       setIsSubmitting(true);
@@ -38,6 +39,9 @@ const Registration = () => {
           Join the Humanitarian Escrow Network
         </h2>
         <p>Register your account to participate as a Donor or Relief Agency.</p>
+        {networkError && (
+          <p style={{color: 'var(--danger)', marginTop: '12px'}}>{networkError}</p>
+        )}
         
         <div style={{marginTop: '20px', marginBottom: '30px', padding: '15px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px'}}>
           <p style={{fontSize: '13px', margin: '0 0 10px 0'}}>Contract Address</p>
@@ -74,7 +78,7 @@ const Registration = () => {
           </div>
 
           <div className="mt-4">
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={isSubmitting || !account}>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={isSubmitting || !account || !contract || !!networkError}>
               {isSubmitting ? "Registering on Blockchain..." : "Complete Registration"}
             </button>
           </div>

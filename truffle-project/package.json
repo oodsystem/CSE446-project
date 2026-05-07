@@ -1,0 +1,19 @@
+{
+  "name": "truffle-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "scripts": {
+    "ganache": "ganache --server.host 127.0.0.1 --server.port 7545 --wallet.deterministic true --chain.chainId 1337",
+    "migrate": "truffle migrate --network development --reset",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "ganache": "^7.9.2",
+    "truffle": "^5.11.5"
+  }
+}

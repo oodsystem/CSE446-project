@@ -9,9 +9,14 @@ const ArbiterPanel = () => {
 
   useEffect(() => {
     fetchDisputesAndTreasury();
-    if(contract) {
-       contract.on("FundsReleased", fetchDisputesAndTreasury);
+    if (contract) {
+      contract.on("FundsReleased", fetchDisputesAndTreasury);
     }
+    return () => {
+      if (contract) {
+        contract.removeAllListeners("FundsReleased");
+      }
+    };
   }, [contract]);
 
   const fetchDisputesAndTreasury = async () => {

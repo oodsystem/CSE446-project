@@ -3,7 +3,8 @@ import { ethers } from "ethers";
 
 const Web3Context = createContext();
 
-const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Example Local Ganache Address (will be updated post-deployment)
+const contractAddress = "0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab";
+const expectedChainId = 1337;
 
 // Human Readable ABI
 const contractABI = [
@@ -15,6 +16,7 @@ const contractABI = [
   "function approveAndPay(uint256 _missionId)",
   "function raiseDispute(uint256 _missionId)",
   "function resolveDispute(uint256 _missionId, bool _agencyFault)",
+  "function missionBids(uint256, address) view returns (uint256)",
   "function users(address) view returns (string name, uint8 role, uint256 reputation, bool isRegistered)",
   "function missions(uint256) view returns (uint256 id, address donor, string category, uint256 maxBudget, string region, uint8 status, address selectedAgency, uint256 agreedPrice)",
   "function missionCount() view returns (uint256)",
@@ -31,19 +33,37 @@ export const Web3Provider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [customAddress, setCustomAddress] = useState(contractAddress);
+  const [chainId, setChainId] = useState(null);
+  const [networkError, setNetworkError] = useState("");
 
   useEffect(() => {
     checkIfWalletIsConnected();
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if(accounts.length > 0) {
+      const handleAccountsChanged = async (accounts) => {
+        if (accounts.length > 0) {
+          setLoading(true);
           setAccount(accounts[0]);
-          fetchUserProfile(accounts[0]);
+          await initializeContract(accounts[0], customAddress);
         } else {
           setAccount(null);
+          setContract(null);
           setUserProfile(null);
+          setLoading(false);
         }
-      });
+      };
+
+      const handleChainChanged = async () => {
+        setLoading(true);
+        await checkIfWalletIsConnected();
+      };
+
+      window.ethereum.on("accountsChanged", handleAccountsChanged);
+      window.ethereum.on("chainChanged", handleChainChanged);
+
+      return () => {
+        window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        window.ethereum.removeListener("chainChanged", handleChainChanged);
+      };
     }
   }, []);
 
@@ -60,10 +80,10 @@ export const Web3Provider = ({ children }) => {
 
   const updateContractAddress = async (newAddress) => {
     setCustomAddress(newAddress);
-    if(account) {
+    if (account) {
       await initializeContract(account, newAddress);
     }
-  }
+  };
 
   const checkIfWalletIsConnected = async () => {
     try {
@@ -71,11 +91,25 @@ export const Web3Provider = ({ children }) => {
         setLoading(false);
         return;
       }
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const network = await provider.getNetwork();
+      const activeChainId = Number(network.chainId);
+      setChainId(activeChainId);
+
+      if (activeChainId !== expectedChainId) {
+        setNetworkError(`Wrong network selected in MetaMask. Switch to Ganache Local (chain ${expectedChainId}).`);
+      } else {
+        setNetworkError("");
+      }
+
       const accounts = await window.ethereum.request({ method: "eth_accounts" });
       if (accounts.length) {
         setAccount(accounts[0]);
         await initializeContract(accounts[0], customAddress);
       } else {
+        setAccount(null);
+        setContract(null);
+        setUserProfile(null);
         setLoading(false);
       }
     } catch (error) {
@@ -88,12 +122,26 @@ export const Web3Provider = ({ children }) => {
     if (!window.ethereum) return;
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
+      const network = await provider.getNetwork();
+      const activeChainId = Number(network.chainId);
+      setChainId(activeChainId);
+
+      if (activeChainId !== expectedChainId) {
+        setContract(null);
+        setUserProfile(null);
+        setNetworkError(`Wrong network selected in MetaMask. Switch to Ganache Local (chain ${expectedChainId}).`);
+        return;
+      }
+
+      setNetworkError("");
       const signer = await provider.getSigner();
       const escContract = new ethers.Contract(addressArg, contractABI, signer);
       setContract(escContract);
       await fetchUserProfile(accountAddress, escContract);
-    } catch(err) {
+    } catch (err) {
       console.error("Initialization err", err);
+      setContract(null);
+      setUserProfile(null);
     }
     setLoading(false);
   };
@@ -120,6 +168,8 @@ export const Web3Provider = ({ children }) => {
         contract,
         userProfile,
         loading,
+        chainId,
+        networkError,
         connectWallet,
         fetchUserProfile,
         customAddress,

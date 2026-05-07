@@ -18,12 +18,20 @@ const DonorPanel = () => {
 
   useEffect(() => {
     fetchMyMissions();
-    if(contract) {
-       contract.on("MissionPosted", fetchMyMissions);
-       contract.on("MissionFunded", fetchMyMissions);
-       contract.on("DeliveredMarked", fetchMyMissions);
-       contract.on("FundsReleased", fetchMyMissions);
+    if (contract) {
+      contract.on("MissionPosted", fetchMyMissions);
+      contract.on("MissionFunded", fetchMyMissions);
+      contract.on("DeliveredMarked", fetchMyMissions);
+      contract.on("FundsReleased", fetchMyMissions);
     }
+    return () => {
+      if (contract) {
+        contract.removeAllListeners("MissionPosted");
+        contract.removeAllListeners("MissionFunded");
+        contract.removeAllListeners("DeliveredMarked");
+        contract.removeAllListeners("FundsReleased");
+      }
+    };
   }, [contract, account]);
 
   const fetchMyMissions = async () => {
@@ -55,14 +63,17 @@ const DonorPanel = () => {
     setBidsLoading(true);
     try {
       // Because `bidders` is an array inside the struct and isn't exposed by default,
-      // We look at the past Events "BidPlaced" to find agencies that bid!
-      const filter = contract.filters.BidPlaced(missionId);
+      // we read all BidPlaced logs and filter them client-side.
+      // The event parameters are not indexed in the Solidity contract,
+      // so provider-side filtering by mission id is unreliable here.
+      const filter = contract.filters.BidPlaced();
       const events = await contract.queryFilter(filter);
+      const missionEvents = events.filter((event) => Number(event.args?.[0]) === Number(missionId));
       
-      const uniqueAgencies = [...new Set(events.map(e => e.args[1]))];
+      const uniqueAgencies = [...new Set(missionEvents.map((event) => event.args?.[1]).filter(Boolean))];
       
       const missionBids = [];
-      for (let agency of uniqueAgencies) {
+      for (const agency of uniqueAgencies) {
         const amountWei = await contract.missionBids(missionId, agency);
         if (amountWei > 0) {
           const profile = await contract.users(agency);
@@ -75,9 +86,10 @@ const DonorPanel = () => {
           });
         }
       }
-      setBids({...bids, [missionId]: missionBids});
-    } catch(err) {
+      setBids((currentBids) => ({ ...currentBids, [missionId]: missionBids }));
+    } catch (err) {
       console.error("Failed to load bids", err);
+      alert("Could not load pledges for this mission. Check the browser console for details.");
     }
     setBidsLoading(false);
   };
