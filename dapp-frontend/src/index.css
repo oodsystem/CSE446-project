@@ -137,6 +137,10 @@ p {
   background: rgba(59, 130, 246, 0.05);
 }
 
+select.form-control option {
+  color: black;
+}
+
 /* Grids & Cards */
 .grid {
   display: grid;
