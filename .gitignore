@@ -1,0 +1,10 @@
+dapp-frontend/node_modules/
+dapp-frontend/dist/
+dapp-frontend/package-lock.json
+dapp-frontend/.env
+
+truffle-project/build/
+truffle-project/node_modules/
+truffle-project/package-lock.json
+
+.DS_Store
